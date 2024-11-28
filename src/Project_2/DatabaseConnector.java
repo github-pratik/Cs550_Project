@@ -21,7 +21,7 @@ public class DatabaseConnector {
         return DriverManager.getConnection(driverPrefixURL + jdbcUrl, username, password);
     }
 
-    public static void executeScript(Connection connection, String scriptPath) throws IOException, SQLException, IOException {
+    public static void executeScript(Connection connection, String scriptPath) throws IOException, SQLException {
         if (connection == null) {
             throw new SQLException("Database connection is not initialized.");
         }
@@ -52,8 +52,15 @@ public class DatabaseConnector {
 
                 // If the line ends with a semicolon, execute the SQL command
                 if (line.endsWith(";")) {
-                    String sql = sqlBuilder.toString().replace(";", ""); // Remove semicolon
-                    statement.execute(sql);
+                    String sql = sqlBuilder.toString().replace(";", "").trim(); // Remove semicolon
+                    try {
+                        statement.execute(sql);
+                        System.out.println("Executed: " + sql); // Log successful execution
+                    } catch (SQLException e) {
+                        // Handle specific SQL errors (e.g., table does not exist)
+                        System.err.println("Error executing SQL: " + sql);
+                        System.err.println("Skipping this statement due to: " + e.getMessage());
+                    }
                     sqlBuilder.setLength(0); // Reset for the next command
                 }
             }
@@ -62,6 +69,7 @@ public class DatabaseConnector {
             System.out.println("SQL script executed successfully.");
         }
     }
+
 
     private static Thread startLoadingAnimation() {
         Thread thread = new Thread(() -> {
